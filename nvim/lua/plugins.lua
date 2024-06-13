@@ -2,18 +2,20 @@ require('util')
 
 
 -- ==== Lightline ====
-function window_size_lock_indicator() local indicators = {' ', ' '}
+function window_size_lock_indicator()
+    local indicators = {' ', ' '}
     if vim.o.winfixwidth then
         indicators[1] = 'w'
     end
     if vim.o.winfixheight then
         indicators[2] = 'h'
     end
-local indicator = table.concat(indicators)
+
+    local indicator = table.concat(indicators)
     if indicator == '  ' then
         return ''
     else
-        return 'l: ' .. indicator
+        return '🔒: ' .. indicator
     end
 end
 
@@ -45,7 +47,7 @@ neotree_config = {
     
     commands = {},
     default_component_configs = {
-        container = {enable_character_fade = true},
+        container = {enable_character_fade = false},
         indent = {
             indent_size = 2,
             padding = 1,
@@ -199,9 +201,9 @@ neotree_config = {
 }
 
 local normal_keymaps = {
-    ['<leader>cfg'] = ':tabnew<CR>\z
-                       :Neotree dir=~/.config/nvim<CR>',
-    ['<leader>nt'] = ':Neotree<CR>'
+    ['<leader>cfg'] = (':tabnew<CR>:Neotree dir=' ..
+                       vim.fn.stdpath('config') .. '<CR>'),
+    ['<leader>nt']  = ':Neotree<CR>'
 }
 apply_table(normal_keymaps, function(k, v) with_opts(nmap, k, v) end)
 augroup('neotree', true, {{'VimEnter', '*', 'Neotree'}})
