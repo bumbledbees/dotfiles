@@ -200,13 +200,16 @@ neotree_config = {
     }
 }
 
-local normal_keymaps = {
-    ['<leader>cfg'] = (':tabnew<CR>:Neotree dir=' ..
-                       vim.fn.stdpath('config') .. '<CR>'),
-    ['<leader>nt']  = ':Neotree<CR>'
-}
-apply_table(normal_keymaps, function(k, v) with_opts(nmap, k, v) end)
-augroup('neotree', true, {{'VimEnter', '*', 'Neotree'}})
+function neotree_setup()
+    local normal_keymaps = {
+        ['<leader>cfg'] = (':tabnew<CR>:Neotree dir=' ..
+                           vim.fn.stdpath('config') .. '<CR>'),
+        ['<leader>nt']  = ':Neotree<CR>'
+    }
+    apply_table(normal_keymaps, function(k, v) with_opts(nmap, k, v) end)
+    augroup('neotree', true, {{'VimEnter', '*', 'Neotree'}})
+    require('neo-tree').setup(neotree_config)
+end
 
 
 -- ==== Python ====
@@ -226,8 +229,11 @@ apply_table(python_opts, function(k, v) vim.g['python_' .. k] = v end)
 
 
 -- ==== Theme ====
-vim.g.lightline.colorscheme = 'gruvbox'
-vim.cmd('colorscheme gruvbox')
+local colorscheme = 'gruvbox'
+local status_ok, _ = pcall(vim.cmd, 'colorscheme ' .. colorscheme)
+if status_ok then
+    vim.g.lightline.colorscheme = 'gruvbox'
+end
 
 
 -- ==== Load Packages ====
@@ -239,7 +245,7 @@ function packages(use)
          requires = {'nvim-lua/plenary.nvim',
                      'nvim-tree/nvim-web-devicons',
                      'MunifTanjim/nui.nvim'},
-         config = function() require('neo-tree').setup(neotree_config) end})
+         config = neotree_setup})
     use('gruvbox-community/gruvbox')
     use('itchyny/lightline.vim')
     -- Git
@@ -252,4 +258,9 @@ function packages(use)
     use('vim-python/python-syntax')
 end
 
-return require('packer').startup(packages)
+local packer_status, packer = pcall(require, 'packer')
+if not packer_status then
+    vim.notify('Could not load plugins (packer.nvim not installed)')
+else
+    return packer.startup(packages)
+end
