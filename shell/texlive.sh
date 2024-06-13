@@ -1,0 +1,5 @@
+local texlive_base_path="$(which tlmgr)"
+local texlive_base_path="${texlive_base_path%/bin/x86_64-linux/tlmgr}"
+export PATH="$PATH:$texlive_base_path/bin/x86_64-linux"
+export MANPATH="$MANPATH:$texlive_base_path/texmf-dist/doc/man"
+export INFOPATH="$INFOPATH:$texlive_base_path/texmf-dist/doc/info"
