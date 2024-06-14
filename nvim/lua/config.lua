@@ -1,6 +1,15 @@
 require('util')
 
 
+-- ==== Operating System-Specific Settings ====
+local os_name = vim.loop.os_uname().sysname
+if os_name == 'Windows_NT' then
+    vim.o.shell = 'powershell.exe'
+elseif os_name == 'Linux' then
+    vim.o.shell = 'zsh'
+end
+
+
 -- ==== Configuration Options ====
 local globals = {
     mapleader   = '_',
