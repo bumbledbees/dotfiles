@@ -213,6 +213,18 @@ function neotree_setup()
     require('neo-tree').setup(neotree_config)
 end
 
+window_picker_config = {
+    filter_rules = {
+        include_current_win = false,
+        autoselect_one = true,
+        -- ignore windows based on buffer options
+        bo = {
+            filetype = {'neo-tree', 'neo-tree-popup', 'notify'},
+            buftype = {'terminal', 'quickfix'}
+        }
+    }
+}
+
 
 -- ==== Python ====
 local python_opts = {
@@ -242,12 +254,23 @@ end
 function packages(use)
     use('wbthomason/packer.nvim')
     -- UI
-    use({'nvim-neo-tree/neo-tree.nvim',
-         branch = 'v3.x',
-         requires = {'nvim-lua/plenary.nvim',
-                     'nvim-tree/nvim-web-devicons',
-                     'MunifTanjim/nui.nvim'},
-         config = neotree_setup})
+    use({
+        'nvim-neo-tree/neo-tree.nvim',
+        branch = 'v3.x',
+        requires = {
+            'nvim-lua/plenary.nvim',
+            'nvim-tree/nvim-web-devicons',
+            'MunifTanjim/nui.nvim',
+            {
+                's1n7ax/nvim-window-picker',
+                version = '2.*',
+                config = function()
+                    require('window-picker').setup(window_picker_config)
+                end
+            }
+        },
+        config = neotree_setup
+    })
     use('gruvbox-community/gruvbox')
     use('itchyny/lightline.vim')
     -- Git
