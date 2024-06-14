@@ -15,7 +15,7 @@ function window_size_lock_indicator()
     if indicator == '  ' then
         return ''
     else
-        return '🔒: ' .. indicator
+        return ' : ' .. indicator
     end
 end
 
@@ -96,6 +96,10 @@ neotree_config = {
         last_modified = {enabled = true, required_width = 88},
         created = {enabled = true, required_width = 110},
         symlink_target = {enabled = false},
+    },
+    event_handlers = {
+        { event = 'neo_tree_window_after_open',
+          handler = function(_) vim.opt_local.number = false end }
     },
     filesystem = {
         filtered_items = {
@@ -201,13 +205,11 @@ neotree_config = {
 }
 
 function neotree_setup()
-    local normal_keymaps = {
-        ['<leader>cfg'] = (':tabnew<CR>:Neotree dir=' ..
-                           vim.fn.stdpath('config') .. '<CR>'),
-        ['<leader>nt']  = ':Neotree<CR>'
-    }
-    apply_table(normal_keymaps, function(k, v) with_opts(nmap, k, v) end)
-    augroup('neotree', true, {{'VimEnter', '*', 'Neotree'}})
+    nmap('<leader>\\', ':Neotree<CR>')
+    nmap('<leader>nt', ':Neotree<CR>')
+    nmap('<leader>cfg',
+         ':tabnew<CR>:Neotree dir=' .. vim.fn.stdpath('config') .. '<CR>')
+    augroup('neo-tree', true, {{'VimEnter', '*', 'Neotree action=show'}})
     require('neo-tree').setup(neotree_config)
 end
 
