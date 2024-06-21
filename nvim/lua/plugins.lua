@@ -242,6 +242,19 @@ local python_opts = {
 apply_table(python_opts, function(k, v) vim.g['python_' .. k] = v end)
 
 
+-- ==== Haskell ====
+local haskell_opts = {
+    enable_quantification   = 1,
+    enable_recursivedo      = 1,
+    enable_arrowsyntax      = 1,
+    enable_pattern_synonyms = 1,
+    enable_typeroles        = 1,
+    enable_static_pointers  = 1,
+    backpack                = 1
+}
+apply_table(python_opts, function(k, v) vim.g['haskell_' .. k] = v end)
+
+
 -- ==== Theme ====
 local colorscheme = 'gruvbox'
 local status_ok, _ = pcall(vim.cmd, 'colorscheme ' .. colorscheme)
@@ -281,6 +294,8 @@ function packages(use)
     -- Language Support
     use('udalov/kotlin-vim')
     use('vim-python/python-syntax')
+    use('neovimhaskell/haskell-vim')
+    use('charlespascoe/vim-go-syntax')
 end
 
 local packer_status, packer = pcall(require, 'packer')
