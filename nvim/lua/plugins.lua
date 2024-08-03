@@ -151,6 +151,18 @@ neotree_config = {
             ['C'] = 'set_root',  -- change directory to the selected directory
             ['<Space>'] = {'toggle_node',    -- expand/collapse a directory or
                            nowait = false},  -- nested file
+            ['<C-b>'] = function(_)  -- Page up
+                local page_up = vim.api.nvim_replace_termcodes(
+                    '<PageUp>', true, true, true
+                )
+                vim.api.nvim_feedkeys(page_up, 'n', false)
+            end,
+            ['<C-f>'] = function(_)  -- Page down
+                local page_down = vim.api.nvim_replace_termcodes(
+                    '<PageDown>', true, true, true
+                )
+                vim.api.nvim_feedkeys(page_down, 'n', false)
+            end,
 
             -- Source Navigation
             ['<'] = 'prev_source',
