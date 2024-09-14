@@ -12,6 +12,14 @@ import subprocess
 import sys
 
 
+class SyncException(Exception):
+    pass
+
+
+def log_and_throw(msg: str):
+    logging.error(f'Error: {msg}')
+    raise SyncException(msg)
+
 def eprint(*args, **kwargs):
     return print(*args, file=sys.stderr, **kwargs)
 
@@ -45,7 +53,33 @@ def nvim_run(nvim_path, *cmds, nvim_args=None, text_output=True,
 
     output = subprocess.run((nvim_path, *nvim_args, *nvim_cmds),
                             **subprocess_kwargs)
+    if output.returncode != 0:
+        log_and_throw(f'exit code {output.returncode} when running '
+                      f'{nvim_path} {nvim_args} {nvim_cmds}')
     return output.stdout
+
+
+def install_packer(nvim_path, nvim_data_dir):
+    logging.info(f'Installing packer.nvim...')
+    git_path = shutil.which('git')
+    if not git_path:
+        log_and_throw('unable to locate git binary')
+
+    repo_url = 'https://github.com/wbthomason/packer.nvim'
+    target_directory = \
+        (nvim_data_dir / 'site' / 'pack' / 'packer' / 'start' / 'packer.nvim')
+    git_cmd = ('git', 'clone', '--depth', '1', repo_url, str(target_directory))
+    result = subprocess.run(git_cmd, capture_output = True)
+    if result.returncode != 0:
+        log_and_throw('error cloning git repo')
+
+    # if we run :PackerCompile and :qa in succession, neovim will exit before
+    # the first command finishes. if we don't :qa, the process hangs
+    # indefinitely. apparently, packer implements autocmd triggers that fire
+    # after certain tasks finish, which is what we use here to solve this issue
+    # (see :help packer-user-autocmds)
+    autoquit = 'autocmd User PackerComplete qa'
+    nvim_run(nvim_path, autoquit, 'PackerInstall', ignore_output=True)
 
 
 def main():
@@ -77,12 +111,19 @@ def main():
 
     nvim_config_dir = Path(nvim_run(nvim_path, 'echo stdpath("config") | q',
                                     nvim_args=('--clean',)))
+    nvim_data_dir = Path(nvim_run(nvim_path, 'echo stdpath("data") | q',
+                                  nvim_args=('--clean',)))
+    packer_install_dir = nvim_data_dir / 'site' / 'pack' / 'packer'
+
     if not nvim_config_dir.exists():
         logging.info(f'Creating Neovim config directory')
         nvim_config_dir.mkdir(mode=0o755, parents=True)
+    if not nvim_data_dir.exists():
+        logging.info(f'Creating Neovim data directory')
+        nvim_data_dir.mkdir(mode=0o755, parents=True)
 
     updated_files = []
-    for file_path in Path('.').glob('**/*.lua'):
+    for file_path in Path(__file__).parent.glob('**/*.lua'):
         target_path = nvim_config_dir / file_path
         if target_path.exists():
             if not filecmp.cmp(file_path, target_path, shallow=False):
@@ -103,13 +144,11 @@ def main():
             copyfile(file_path, target_path)
             updated_files.append(target_path)
 
+    if not packer_install_dir.exists():
+        install_packer(nvim_path, nvim_data_dir)
     if any(p.name == 'plugins.lua' for p in updated_files):
         logging.info('plugins.lua updated, recompiling packer cache...')
-        # if we run :PackerCompile and :qa in succession, neovim will exit
-        # before the first command finishes. if we don't :qa, the process hangs
-        # indefinitely. apparently, packer implements an autocmd trigger that
-        # fires after compilation is finished, which is what we use here to
-        # solve this issue (see :help packer-user-autocmds)
+        # see comment in install_packer() for more about this autocmd
         autoquit = 'autocmd User PackerCompileDone qa'
         nvim_run(nvim_path, autoquit, 'PackerCompile', ignore_output=True)
 
