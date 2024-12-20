@@ -1,6 +1,11 @@
 require('util')
 
 
+-- ==== Theme ====
+local colorscheme = 'gruvbox'
+local theme_ok, _ = pcall(vim.cmd, 'colorscheme ' .. colorscheme)
+
+
 -- ==== Lightline ====
 function window_size_lock_indicator()
     local indicators = {' ', ' '}
@@ -15,11 +20,12 @@ function window_size_lock_indicator()
     if indicator == '  ' then
         return ''
     else
-        return ' : ' .. indicator
+        -- return ' : ' .. indicator
+        return 'l: ' .. indicator
     end
 end
 
-vim.g.lightline = {
+local lightline_config = {
     active = {
         left = {
             {'mode', 'paste'},
@@ -31,10 +37,17 @@ vim.g.lightline = {
             {'size_lock', 'fileformat', 'fileencoding', 'filetype'}
         }
     },
+    component = {
+        lineinfo = '%3l:%-2v'
+    },
     component_function = {
         size_lock = 'v:lua.window_size_lock_indicator'
     }
 }
+if theme_ok then
+  lightline_config.colorscheme = colorscheme
+end
+vim.g.lightline = lightline_config
 
 
 -- ==== Neotree ====
@@ -108,7 +121,7 @@ neotree_config = {
             hide_hidden = true,
             hide_by_pattern = {'*.egg-info', '*.egg'},
             hide_by_name = {'build', 'dist', 'dist-newstyle', 'node_modules'},
-            always_show = {'.gitignore'},
+            always_show = {'.gitignore', 'src'},
             never_show = {'__pycache__'},
         },
         follow_current_file = {enabled = false},
@@ -151,6 +164,18 @@ neotree_config = {
             ['C'] = 'set_root',  -- change directory to the selected directory
             ['<Space>'] = {'toggle_node',    -- expand/collapse a directory or
                            nowait = false},  -- nested file
+            ['<C-b>'] = function(_)  -- Page up
+                local page_up = vim.api.nvim_replace_termcodes(
+                    '<PageUp>', true, true, true
+                )
+                vim.api.nvim_feedkeys(page_up, 'n', false)
+            end,
+            ['<C-f>'] = function(_)  -- Page down
+                local page_down = vim.api.nvim_replace_termcodes(
+                    '<PageDown>', true, true, true
+                )
+                vim.api.nvim_feedkeys(page_down, 'n', false)
+            end,
 
             -- Source Navigation
             ['<'] = 'prev_source',
@@ -226,6 +251,47 @@ window_picker_config = {
 }
 
 
+-- ==== LSP / Autocomplete ====
+function lspconfig_setup()
+    local lspconfig = require('lspconfig')
+    local capabilities = require('cmp_nvim_lsp').default_capabilities()
+    local servers = {'pylsp'}
+    for _, lsp in ipairs(servers) do
+        lspconfig[lsp].setup {
+            capabilities = capabilities,
+        }
+    end
+end
+
+function nvim_cmp_setup()
+    local cmp = require('cmp')
+    cmp.setup {
+        snippet = {
+            expand = function(args) require('luasnip').lsp_expand(args.body) end,
+        },
+        mapping = cmp.mapping.preset.insert({
+            ['<C-j>'] = cmp.mapping.select_next_item(),
+            ['<C-k>'] = cmp.mapping.select_prev_item(),
+            ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+            ['<C-f>'] = cmp.mapping.scroll_docs(4),
+            ['<C-Space>'] = cmp.mapping.complete(),
+            ['<C-CR>'] = cmp.mapping.confirm(),
+            ['<C-c>'] = cmp.mapping.abort(),
+        }),
+        window = {
+            -- completion = cmp.config.window.bordered(),
+            -- documentation = cmp.config.window.bordered(),
+        },
+        sources = cmp.config.sources({
+            { name = 'nvim_lsp' },
+            { name = 'luasnip' },
+        }, {
+            { name = 'buffer' },
+        })
+    }
+end
+
+
 -- ==== Python ====
 local python_opts = {
     highlight_builtins              = true,
@@ -253,14 +319,6 @@ local haskell_opts = {
     backpack                = 1
 }
 apply_table(python_opts, function(k, v) vim.g['haskell_' .. k] = v end)
-
-
--- ==== Theme ====
-local colorscheme = 'gruvbox'
-local status_ok, _ = pcall(vim.cmd, 'colorscheme ' .. colorscheme)
-if status_ok then
-    vim.g.lightline.colorscheme = 'gruvbox'
-end
 
 
 -- ==== Load Packages ====
@@ -291,6 +349,17 @@ function packages(use)
     use('airblade/vim-gitgutter')
     use({'lewis6991/gitsigns.nvim',
          config = function() require('gitsigns').setup() end})
+    -- Linting / Autocomplete
+    use({
+        'hrsh7th/nvim-cmp',
+        requires = {'L3MON4D3/LuaSnip', 'saadparwaiz1/cmp_luasnip'},
+        config = nvim_cmp_setup,
+    })
+    use({
+        'neovim/nvim-lspconfig',
+        requires = {'hrsh7th/cmp-nvim-lsp'},
+        config = lspconfig_setup,
+    })
     -- Language Support
     use('udalov/kotlin-vim')
     use('vim-python/python-syntax')
