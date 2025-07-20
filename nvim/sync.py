@@ -17,6 +17,8 @@ class SyncException(Exception):
 
 
 class Neovim:
+    NO_SYNC = ('packer_compiled.lua', 'localconfig.lua')
+
     def __init__(self):
         self.nvim = shutil.which('nvim')
         if not self.nvim:
@@ -42,11 +44,13 @@ class Neovim:
         nvim_args = ('--headless', *nvim_args)
         nvim_cmds = chain.from_iterable(('-c', cmd) for cmd in cmds)
 
-        subprocess_kwargs = {}
+        subprocess_kwargs = {'text': True}
         if not ignore_output:
             subprocess_kwargs['stdout'] = subprocess.PIPE
             subprocess_kwargs['stderr'] = subprocess.STDOUT
-            subprocess_kwargs['text'] = True
+        else:
+            subprocess_kwargs['stdout'] = subprocess.DEVNULL
+            subprocess_kwargs['stderr'] = subprocess.DEVNULL
 
         output = subprocess.run((self.nvim, *nvim_args, *nvim_cmds),
                                 **subprocess_kwargs)
@@ -77,15 +81,15 @@ class Neovim:
         self.run(autoquit, 'PackerInstall', ignore_output=True)
 
     def packer_compile(self):
-        if not self.packer_dir.exists():
+        if not self.packer_path.exists():
             self.install_packer()
 
         autoquit = 'autocmd User PackerCompileDone qa'
         self.run(autoquit, 'PackerCompile', ignore_output=True)
 
     def confirm_sync(self, source_path: Path, target_path: Path) -> bool:
-        print(f'{source_path} differs from {target_path}. ', end='')
-        prompt = 'Overwrite? ([y]es/[n]o/view [d]iff) '
+        print(f'{source_path} differs from {target_path}.')
+        prompt = '  Overwrite? ([y]es/[n]o/view [d]iff) '
         while True:
             choice = input(prompt).lower()
             if not choice:
@@ -110,7 +114,7 @@ class Neovim:
         updated_files = []
         logging.debug(f'sync_config({source_dir=}, {target_dir=}, {force=})')
         for source_path in source_dir.glob('**/*.lua'):
-            if source_path.name == 'packer_compiled.lua':
+            if source_path.name in self.NO_SYNC:
                 continue
             target_path = target_dir / source_path.relative_to(source_dir)
             if target_path.exists():

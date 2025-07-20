@@ -144,7 +144,7 @@ neotree_config = {
             ['<Esc>'] = 'cancel',
             ['q'] = 'close_window',  -- close the window containing neo-tree
             ['R'] = 'refresh',
-            ['H'] = 'toggle_hidden',
+            ['<C-h>'] = 'toggle_hidden',
 
             -- Navigation (:help neo-tree-navigation)
             ['z'] = 'close_all_nodes',
