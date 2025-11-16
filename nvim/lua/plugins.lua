@@ -5,7 +5,6 @@ require('util')
 local colorscheme = 'gruvbox'
 local theme_ok, _ = pcall(vim.cmd, 'colorscheme ' .. colorscheme)
 
-
 -- ==== Lightline ====
 function window_size_lock_indicator()
     local indicators = {' ', ' '}
@@ -292,6 +291,37 @@ function nvim_cmp_setup()
 end
 
 
+-- ==== Treesitter ====
+function treesitter_setup ()
+    local languages = {
+        'arduino', 'asm', 'awk', 'bash', 'c', 'cmake', 'cpp', 'css', 'csv',
+        'desktop', 'diff', 'disassembly', 'dockerfile', 'fish', 'git_config',
+        'git_rebase', 'gitattributes', 'gitcommit', 'gitignore', 'go',
+        'haskell', 'html', 'java', 'javadoc', 'javascript', 'jinja',
+        'jinja_inline', 'jq', 'jsdoc', 'json', 'json5', 'jsonc', 'jsx',
+        'kconfig', 'kitty', 'kotlin', 'latex', 'llvm', 'lua', 'luadoc', 'make',
+        'markdown', 'makrdown_inline', 'meson', 'muttrc', 'meson', 'nginx',
+        'ninja', 'nix', 'objdump', 'ocaml', 'ocaml_interface', 'passwd', 'pem',
+        'perl', 'php', 'phpdoc', 'powershell', 'printf', 'python', 'r',
+        'racket', 'readline', 'regex', 'requirements', 'rst', 'ruby', 'rust',
+        'sql', 'ssh_config', 'strace', 'tmux', 'todotxt', 'toml', 'tsv', 'tsx',
+        'typescript', 'udev', 'vim', 'vimdoc', 'xml', 'xresources', 'yaml',
+        'zig', 'zsh'
+    }
+    require'nvim-treesitter'.install(languages)
+    for _, lang in ipairs(languages) do
+        vim.api.nvim_create_autocmd('FileType', {
+            pattern = { lang },
+            callback = function()
+                vim.treesitter.start()
+                vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+                vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+            end,
+        })
+    end
+end
+
+
 -- ==== Python ====
 local python_opts = {
     highlight_builtins              = true,
@@ -361,6 +391,9 @@ function packages(use)
         config = lspconfig_setup,
     })
     -- Language Support
+    use({'nvim-treesitter/nvim-treesitter',
+         branch = 'main',
+         config = treesitter_setup})
     use('udalov/kotlin-vim')
     use('vim-python/python-syntax')
     use('neovimhaskell/haskell-vim')
