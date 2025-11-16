@@ -253,13 +253,13 @@ window_picker_config = {
 
 -- ==== LSP / Autocomplete ====
 function lspconfig_setup()
-    local lspconfig = require('lspconfig')
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
     local servers = {'pylsp'}
     for _, lsp in ipairs(servers) do
-        lspconfig[lsp].setup {
+        vim.lsp.config(lsp, {
             capabilities = capabilities,
-        }
+        })
+        vim.lsp.enable(lsp)
     end
 end
 
