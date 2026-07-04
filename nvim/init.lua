@@ -1,3 +1,3 @@
 require('config')
-require('plugins')
+require('pluginloader')
 pcall(require, 'localconfig')
